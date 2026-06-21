@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hamari Kahani</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;1,500&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --maroon-deep:#2a0e14;
+    --maroon:#5e1620;
+    --rose:#a13346;
+    --gold:#e8b34a;
+    --gold-pale:#f3d98a;
+    --cream:#f7ecd9;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;
+    background:radial-gradient(circle at 50% 0%, var(--maroon) 0%, var(--maroon-deep) 60%, #160709 100%);
+    color:var(--cream);
+    font-family:'Cormorant Garamond', serif;
+    min-height:100vh;
+  }
+  .wrap{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    padding:40px 22px 50px;
+  }
+  .eyebrow{
+    text-align:center;
+    letter-spacing:0.3em;
+    text-transform:uppercase;
+    font-size:11px;
+    color:var(--gold);
+    margin-bottom:6px;
+  }
+  h1{
+    text-align:center;
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:clamp(30px,8vw,42px);
+    margin:0 0 30px;
+    color:var(--gold-pale);
+    text-shadow:0 0 24px rgba(232,179,74,0.3);
+  }
+  .scene{
+    display:none;
+    animation:fadeIn .6s ease forwards;
+  }
+  .scene.active{display:block;}
+  @keyframes fadeIn{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);}}
+
+  .progress{
+    display:flex;
+    justify-content:center;
+    gap:6px;
+    margin-bottom:26px;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:rgba(247,236,217,0.2);transition:.3s;}
+  .dot.done{background:var(--gold);}
+
+  .date-tag{
+    text-align:center;
+    font-size:12px;
+    letter-spacing:0.2em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:10px;
+  }
+
+  .card{
+    background:rgba(247,236,217,0.06);
+    border:1px solid rgba(232,179,74,0.22);
+    border-radius:18px;
+    padding:30px 24px;
+    backdrop-filter:blur(6px);
+  }
+
+  .story-text{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-size:clamp(18px,4.4vw,21px);
+    line-height:1.65;
+    color:var(--cream);
+    margin-bottom:8px;
+  }
+  .story-text + .story-text{margin-top:14px;}
+
+  .choices{
+    margin-top:28px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  .choice-btn{
+    background:linear-gradient(135deg, rgba(161,51,70,0.5), rgba(94,22,32,0.5));
+    color:var(--cream);
+    border:1px solid rgba(232,179,74,0.4);
+    padding:16px 18px;
+    border-radius:14px;
+    font-family:'Cormorant Garamond', serif;
+    font-size:16px;
+    text-align:left;
+    cursor:pointer;
+    transition:transform .15s ease, background .2s ease;
+  }
+  .choice-btn:active{transform:scale(0.98);}
+  .choice-btn:hover{background:linear-gradient(135deg, rgba(161,51,70,0.7), rgba(94,22,32,0.7));}
+
+  .next-btn{
+    margin-top:28px;
+    width:100%;
+    background:linear-gradient(135deg,var(--rose),var(--maroon));
+    color:var(--cream);
+    border:1px solid rgba(232,179,74,0.5);
+    padding:15px 18px;
+    border-radius:999px;
+    font-family:'Cormorant Garamond',serif;
+    font-size:16px;
+    letter-spacing:0.04em;
+    cursor:pointer;
+  }
+  .next-btn:active{transform:scale(0.98);}
+
+  .ending-title{
+    font-family:'Playfair Display', serif;
+    font-style:italic;
+    font-weight:700;
+    font-size:clamp(24px,6vw,30px);
+    color:var(--gold-pale);
+    text-align:center;
+    margin-bottom:14px;
+  }
+
+  .restart-btn{
+    margin-top:30px;
+    background:none;
+    border:1px solid rgba(247,236,217,0.3);
+    color:rgba(247,236,217,0.7);
+    padding:12px 22px;
+    border-radius:999px;
+    font-family:'Cormorant Garamond',serif;
+    font-size:14px;
+    cursor:pointer;
+  }
+
+  .footer-note{
+    margin-top:auto;
+    padding-top:36px;
+    text-align:center;
+    font-size:12px;
+    letter-spacing:0.15em;
+    text-transform:uppercase;
+    color:rgba(247,236,217,0.35);
+  }
+
+  .heart{
+    text-align:center;
+    font-size:28px;
+    margin-bottom:12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Ek Sachi Kahani</div>
+  <h1>Hamari Kahani</h1>
+
+  <div class="progress" id="progress"></div>
+
+  <div id="story"></div>
+
+  <div class="footer-note">Neechay Flat 501 mein roshni thi</div>
+</div>
+
+<script>
+const TOTAL_DOTS = 6;
+
+const scenes = {
+  start: {
+    date: "Coaching ke din",
+    text: [
+      "Coaching ki bheed mein, ek class room ke us kone mein, maine pehli baar tumhe dekha tha.",
+      "Tum tab bachhi thi - haste hue, apni duniya mein khoyi hui. Aur main, kuch keh nahi paaya."
+    ],
+    choices: [
+      { label: "Dil mein hi rakh lo, waqt sahi aane do", next: "wait" }
+    ]
+  },
+  wait: {
+    date: "Kuch waqt baad",
+    text: [
+      "Mahine guzre. Tum badi hoti gayi, aur main bas dekhta raha - door se, kabhi paas se.",
+      "Har baar lagta, 'aaj baat kar lu', par dil keh deta - 'sahi waqt abhi nahi aaya'."
+    ],
+    choices: [
+      { label: "Himmat karo, ek baar baat shuru karo", next: "talk" },
+      { label: "Thoda aur wait karo, pehchaan badhne do", next: "wait2" }
+    ]
+  },
+  talk: {
+    date: "Pehli baatcheet",
+    text: [
+      "Aakhirkar himmat ki, aur jo dar tha woh galat nikla - tumhari awaaz mein woh hi sukoon tha jo tumhari hassi mein tha.",
+      "Wahan se baat shuru hui, jo kabhi rukti nahi thi."
+    ],
+    choices: [{ label: "Aage badho", next: "hug" }]
+  },
+  wait2: {
+    date: "Thoda waqt aur",
+    text: [
+      "Tumne khud kabhi mehsoos kiya hoga shayad - koi tumhe dheere dheere notice karta tha, bina kuch kahe.",
+      "Phir ek din, sab kuch apne aap theek raasta dhoondh leta hai."
+    ],
+    choices: [{ label: "Aage badho", next: "hug" }]
+  },
+  hug: {
+    date: "7 November 2023",
+    text: [
+      "Aur phir aaya woh din. 7 November 2023.",
+      "Jab pehli baar tumhe gale lagaya, toh laga - jaise saari kayanat ek pal ke liye thehar gayi ho.",
+      "Wo hug sirf ek pal nahi tha - wo ek waada tha, bina kuch bole."
+    ],
+    choices: [
+      { label: "Us pal ko hamesha yaad rakho", next: "distance" }
+    ]
+  },
+  distance: {
+    date: "Long Distance",
+    text: [
+      "Par zindagi ne ek nayi pareeksha li - hum dono door ho gaye. Shehar alag, raat ki calls hi sahara thi.",
+      "Kabhi laga ki itni doori shayad sab kuch mushkil bana degi."
+    ],
+    choices: [
+      { label: "Har raat baat karo, doori ko jeetne do", next: "strong" },
+      { label: "Dar lage, par dil se na maano", next: "doubt" }
+    ]
+  },
+  strong: {
+    date: "Doori ke beech",
+    text: [
+      "Har raat ki call ne doori ko itna kam kar diya ki lagta tha tum saamne hi ho.",
+      "Pyaar door rehkar bhi paas hi raha - shayad isi ne sabse pakka kar diya."
+    ],
+    choices: [{ label: "Aage badho", next: "train" }]
+  },
+  doubt: {
+    date: "Doori ke beech",
+    text: [
+      "Kabhi raaton mein dar lagta - kya itni doori mein pyaar bach payega?",
+      "Par har baar, tumhari awaaz sunkar wo dar khatam ho jaata - kyunki dil ko pata tha, ye sirf doori hai, ant nahi."
+    ],
+    choices: [{ label: "Aage badho", next: "train" }]
+  },
+  train: {
+    date: "4 December 2023",
+    text: [
+      "4 December 2023. Train ki khidki se bahar bhaagte hue manzar, aur dil ke andar ek sawaal jo bahut der se ruka hua tha.",
+      "Usi train mein, bina kisi tayyari ke, maine tumse poocha - aur tumne haan kaha.",
+      "Chalti train, badalte manzar, aur ek waada jo kahin ruka nahi - bilkul train ki tarah."
+    ],
+    choices: [
+      { label: "Aage badho - kahani ka anjaam dekho", next: "ending_choice" }
+    ]
+  },
+  ending_choice: {
+    date: "Aaj",
+    text: [
+      "Coaching ke us kone se, train ke us pal tak - kahani yahan tak pahunchi.",
+      "Par har kahani ka ek dil hota hai jo bolta hai..."
+    ],
+    choices: [
+      { label: "Tumhi meri kahani ho", next: "ending_story" },
+      { label: "Tum mera ghar ho, jahan bhi ho", next: "ending_home" },
+      { label: "Tum mera best plot-twist ho", next: "ending_twist" }
+    ]
+  }
+};
+
+const endings = {
+  ending_story: {
+    title: "Tumhi Meri Kahani Ho",
+    text: [
+      "Coaching ke us kone se shuru hui ye kahani, har mod pe tumhare hi naam likhi gayi.",
+      "Hug se train tak, doori se paas tak - har panna tumhara hai. Aakhirkar, neechay Flat 501 mein roshni thi - aur wo roshni tum ho.",
+      "Happy Birthday, meri sabse pyaari kahani. 🤍"
+    ]
+  },
+  ending_home: {
+    title: "Tum Mera Ghar Ho",
+    text: [
+      "Doori ne sikhaya - ghar koi jagah nahi, ek ehsaas hai. Aur wo ehsaas tum ho.",
+      "Jahan bhi raho, jitna bhi door raho - dil hamesha tumhare paas hi rahega.",
+      "Happy Birthday, mera ghar, meri jaan. 🤍"
+    ]
+  },
+  ending_twist: {
+    title: "Mera Best Plot-Twist",
+    text: [
+      "Coaching mein jab tumhe dekha tha, kisi ko andaza nahi tha ki ye kahani itni door tak jaayegi.",
+      "Train mein wo sawaal, wo haan - sabse pyaara plot-twist tha jo zindagi ne diya.",
+      "Happy Birthday, meri sabse khoobsurat surprise. 🤍"
+    ]
+  }
+};
+
+let history = [];
+
+function renderProgress(step){
+  const progress = document.getElementById('progress');
+  progress.innerHTML = '';
+  for(let i=0;i<TOTAL_DOTS;i++){
+    const d = document.createElement('div');
+    d.className = 'dot' + (i < step ? ' done' : '');
+    progress.appendChild(d);
+  }
+}
+
+function renderScene(key, isEnding){
+  const story = document.getElementById('story');
+  story.innerHTML = '';
+  const div = document.createElement('div');
+  div.className = 'scene active';
+
+  if(isEnding){
+    const data = endings[key];
+    const heart = document.createElement('div');
+    heart.className = 'heart';
+    heart.textContent = '🕯️';
+    div.appendChild(heart);
+
+    const title = document.createElement('div');
+    title.className = 'ending-title';
+    title.textContent = data.title;
+    div.appendChild(title);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    data.text.forEach(t=>{
+      const p = document.createElement('div');
+      p.className = 'story-text';
+      p.textContent = t;
+      card.appendChild(p);
+    });
+    div.appendChild(card);
+
+    const restart = document.createElement('button');
+    restart.className = 'restart-btn';
+    restart.textContent = 'Kahani phir se shuru karo';
+    restart.onclick = () => { history = []; renderScene('start', false); renderProgress(0); };
+    div.appendChild(restart);
+
+  } else {
+    const data = scenes[key];
+    renderProgress(history.length);
+
+    const dateTag = document.createElement('div');
+    dateTag.className = 'date-tag';
+    dateTag.textContent = data.date;
+    div.appendChild(dateTag);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    data.text.forEach(t=>{
+      const p = document.createElement('div');
+      p.className = 'story-text';
+      p.textContent = t;
+      card.appendChild(p);
+    });
+
+    const choicesWrap = document.createElement('div');
+    choicesWrap.className = 'choices';
+    data.choices.forEach(choice=>{
+      const btn = document.createElement('button');
+      btn.className = 'choice-btn';
+      btn.textContent = choice.label;
+      btn.onclick = () => {
+        history.push(key);
+        const isEndingNext = !!endings[choice.next];
+        renderScene(choice.next, isEndingNext);
+      };
+      choicesWrap.appendChild(btn);
+    });
+    card.appendChild(choicesWrap);
+    div.appendChild(card);
+  }
+
+  story.appendChild(div);
+}
+
+renderScene('start', false);
+</script>
+</body>
+</html>
